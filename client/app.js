@@ -1,5 +1,9 @@
 Session.set('initialLoad', true);
 
+l=function(s){
+  console.log(s);
+}
+
 // HELPERS
 getSetting = function(setting){
   var settings=Settings.find().fetch()[0];
@@ -38,7 +42,7 @@ Meteor.subscribe('allUsers');
 // Only load if user is logged in
 
 var Notifications = new Meteor.Collection('notifications');
-if(Meteor.user()){
+if(Meteor.userId() != null){
   Meteor.subscribe('notifications');
 }
 
@@ -70,7 +74,7 @@ var newPostsHandle = postListSubscription(FIND_APPROVED, {sort: {sticky: -1, sub
 var bestPostsHandle = postListSubscription(FIND_APPROVED, {sort: {sticky: -1, baseScore: -1}}, 10);
 var pendingPostsHandle = postListSubscription(
   {$or: [{status: STATUS_PENDING}, {status: STATUS_REJECTED}]}, 
-  {sort: {score: -1}}, 
+  {sort: {createdAt: -1}}, 
   10
 );
 
@@ -97,12 +101,14 @@ Meteor.autorun(function() {
           $lt: mDate.endOf('day').valueOf()
         }
       }, FIND_APPROVED);
-    var options = {sort: {score: -1}};
+    // note: the digest is ranked by baseScore and not score because we want the posts with the most votes of the day
+    // independantly of age
+    var options = {sort: {baseScore: -1}};
     
     // we aren't ever going to paginate this sub, but we'll use pSub
     // so we have a reactive loading() function 
     // (grr... https://github.com/meteor/meteor/pull/273)
-    return postListSubscription(find, options, 5);
+    return postListSubscription(find, options, 50);
   };
   
   // take it to the start of the day.
