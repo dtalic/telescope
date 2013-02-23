@@ -19,10 +19,8 @@
     return collection.findOne({_id: id, downvoters: user._id}) !== undefined;
   }
 
-  var upvote = function(collection, id, user) {
-    // if no user is specified, use current user by default
-    var user = (typeof user === 'undefined') ? Meteor.user() : user;
-
+  var upvote = function(collection, id) {
+    var user = Meteor.user();
     if (!user || !canUpvote(user, collection, true)  || hasUpvotedItem(user, collection, id))
       return false;
 
@@ -30,13 +28,11 @@
     var votedItem = collection.findOne(id);
 
     // Votes & Score
-    collection.update({_id: id},{
-      $addToSet: {upvoters: user._id},
-      $inc: {votes: 1, baseScore: votePower},
-      $set: {inactive: false}
-    });
+    collection.update({_id: id},
+                      {$addToSet: {upvoters: user._id},
+                       $inc: {votes: 1, baseScore: votePower}});
     if(!this.isSimulation)
-      updateScore(collection, id, true);
+      updateScore(collection, id);
 
     // Karma     
     // user's posts and comments do not impact his own karma:
@@ -47,10 +43,8 @@
     return true;
   };
 
-  var downvote = function(collection, id, user) {
-    // if no user is specified, use current user by default
-    var user = (typeof user === 'undefined') ? Meteor.user() : user;
-
+  var downvote = function(collection, id) {
+    var user = Meteor.user();
     if (! user || !canDownvote(user, collection, 'redirect') || hasDownvotedItem(user, collection, id))
       return false;
     
@@ -58,13 +52,11 @@
     var votedItem = collection.findOne(id);
 
     // Votes & Score
-    collection.update({_id: id},{
-      $addToSet: {downvoters: user._id},
-      $inc: {votes: -1, baseScore: -votePower},
-      $set: {inactive: false}
-    });
+    collection.update({_id: id},
+                      {$addToSet: {downvoters: user._id},
+                       $inc: {votes: -1, baseScore: -votePower}});
     if(!this.isSimulation)  
-      updateScore(collection, id, true);
+      updateScore(collection, id);
 
     // Karma
     // user's posts and comments do not impact his own karma:
@@ -75,10 +67,8 @@
     return true;
   };
 
-  var cancelUpvote = function(collection, id, user) {
-    // if no user is specified, use current user by default
-    var user = (typeof user === 'undefined') ? Meteor.user() : user;
-
+  var cancelUpvote = function(collection, id) {
+    var user = Meteor.user();
     if (! user || !canUpvote(user, collection, 'redirect') || ! hasUpvotedItem(user, collection, id))
       return false
     
@@ -86,13 +76,11 @@
     var votedItem = collection.findOne(id);
    
     // Votes & Score
-    collection.update({_id: id},{
-      $pull: {upvoters: user._id},
-      $inc: {votes: -1, baseScore: -votePower},
-      $set: {inactive: false}
-    });
+    collection.update({_id: id},
+                      {$pull: {upvoters: user._id},
+                       $inc: {votes: -1, baseScore: -votePower}});
     if(!this.isSimulation)
-      updateScore(collection, id, true);
+      updateScore(collection, id);
 
     // Karma
     // user's posts and comments do not impact his own karma:
@@ -103,10 +91,8 @@
     return true;
   };
 
-  var cancelDownvote = function(collection, id, user) {
-    // if no user is specified, use current user by default
-    var user = (typeof user === 'undefined') ? Meteor.user() : user;
-
+  var cancelDownvote = function(collection, id) {
+    var user = Meteor.user();
     if (! user || !canDownvote(user, collection, 'redirect') || ! hasDownvotedItem(user, collection, id))
       return false
 
@@ -114,13 +100,11 @@
     var votedItem = collection.findOne(id);
     
     // Votes & Score
-    collection.update({_id: id},{
-      $pull: {downvoters: user._id},
-      $inc: {votes: 1, baseScore: votePower},
-      $set: {inactive: false}
-    });
+    collection.update({_id: id},
+                      {$pull: {downvoters: user._id},
+                       $inc: {votes: 1, baseScore: votePower}});
     if(!this.isSimulation)
-      updateScore(collection, id, true);
+      updateScore(collection, id);
 
     // Karma
     // user's posts and comments do not impact his own karma:
@@ -131,45 +115,31 @@
     return true;
   };
 
-  var getUser = function(user){
-    // only let admins specify different users for voting
-    // if no user is specified, use current user by default
-    return (isAdmin(Meteor.user()) && typeof user !== 'undefined') ? user : Meteor.user();
-  }
-  
   Meteor.methods({
-    upvotePost: function(postId, user){
-      var user = getUser(user);
-      return upvote.call(this, Posts, postId, user);
+    upvotePost: function(postId){
+      return upvote.call(this, Posts, postId);
     },
-    downvotePost: function(postId, user){
-      var user = getUser(user);
-      return downvote.call(this, Posts, postId, user);
+    downvotePost: function(postId){
+      return downvote.call(this, Posts, postId);
     },
-    cancelUpvotePost: function(postId, user){
-      var user = getUser(user);
-      return cancelUpvote.call(this, Posts, postId, user);
+    cancelUpvotePost: function(postId){
+      return cancelUpvote.call(this, Posts, postId);
     },
-    cancelDownvotePost: function(postId, user){
-      var user = getUser(user);
-      return cancelDownvote.call(this, Posts, postId, user);
+    cancelDownvotePost: function(postId){
+      return cancelDownvote.call(this, Posts, postId);
     },
 
-    upvoteComment: function(commentId, user){
-      var user = getUser(user);
-      return upvote.call(this, Comments, commentId, user);
+    upvoteComment: function(commentId){
+      return upvote.call(this, Comments, commentId);
     },
-    downvoteComment: function(commentId, user){
-      var user = getUser(user);
-      return downvote.call(this, Comments, commentId, user);
+    downvoteComment: function(commentId){
+      return downvote.call(this, Comments, commentId);
     },
-    cancelUpvoteComment: function(commentId, user){
-      var user = getUser(user);
-      return cancelUpvote.call(this, Comments, commentId, user);
+    cancelUpvoteComment: function(commentId){
+      return cancelUpvote.call(this, Comments, commentId);
     },
-    cancelDownvoteComment: function(commentId, user){
-      var user = getUser(user);
-      return cancelDownvote.call(this, Comments, commentId, user);
+    cancelDownvoteComment: function(commentId){
+      return cancelDownvote.call(this, Comments, commentId);
     }
   });
 

@@ -10,27 +10,24 @@
 			font-size:8px;
 		}
 	}
-	.dropdown-menu{
+	ul{
 		display:none;
-		top:10px;
-		left:10px;
 		position:absolute;
-		padding-top:20px;
-		ul{
-			background:white;
-			padding:10px;
-			width:140px;
-			@include border-radius(3px);
-			@include box-shadow(0 1px 3px black(0.35));
-			li{
-				a{
-					font-size:14px;
-				}
+		top:30px;
+		left:10px;
+		background:white;
+		padding:10px;
+		width:140px;
+		@include border-radius(3px);
+		@include box-shadow(0 1px 3px black(0.35));
+		li{
+			a{
+				font-size:14px;
 			}
 		}
 	}
 	&:hover{
-		.dropdown-menu{
+		ul{
 			display:block;
 		}
 	}

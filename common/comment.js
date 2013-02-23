@@ -10,9 +10,7 @@ Meteor.methods({
     var properties={
         'commentAuthorId': user._id,
         'commentAuthorName': getDisplayName(user),
-        'commentExcerpt': trimWords(stripMarkdown(cleanText),20),
         'postId': postId,
-        'postHeadline' : post.headline
     };
 
     // check that user can comment
@@ -39,7 +37,7 @@ Meteor.methods({
 
     Meteor.call('upvoteComment', newCommentId);
 
-    properties.commentId = newCommentId;
+    properties['commentId']=newCommentId;
 
     if(!this.isSimulation){
       if(parentCommentId){
@@ -47,23 +45,18 @@ Meteor.methods({
         var parentComment=Comments.find(parentCommentId);
         var parentUser=Meteor.users.find(parentComment.userId);
 
-        properties.parentCommentId = parentCommentId;
-        properties.parentAuthorId = parentComment.userId;
-        properties.parentAuthorName = getDisplayName(parentUser);
+        properties['parentCommentId']=parentCommentId;
+        properties['parentAuthorId']=parentComment.userId;
+        properties['parentAuthorName']=getDisplayName(parentUser);
 
-        // do not notify users of their own actions (i.e. they're replying to themselves)
-        if(parentUser._id != user._id)
-          Meteor.call('createNotification','newReply', properties, parentUser, user);
-
-        // if the original poster is different from the author of the parent comment, notify them too
-        if(postUser._id != user._id && parentComment.userId != post.userId)
-          Meteor.call('createNotification','newComment', properties, postUser, user);
-
+        notify('newReply', properties, parentUser, user);
+        if(parentComment.userId!=post.userId){
+          // if the original poster is different from the author of the parent comment, notify them too
+          notify('newComment', properties, postUser, Meteor.user());
+        }
       }else{
         // root comment
-        // don't notify users of their own comments
-        if(postUser._id != user._id)
-          Meteor.call('createNotification','newComment', properties, postUser, Meteor.user());
+        notify('newComment', properties, postUser, Meteor.user());
       }
     }
     return properties;
